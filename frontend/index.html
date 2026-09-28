@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZenPharma Course Assistant</title>
+<style>
+  :root { --bg:#F8FAFC; --card:#FFFFFF; --text:#0F172A; --sub:#475569; --accent:#2563EB; --line:#E2E8F0; --code:#0A0F1C; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 40px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--sub); font-size: 14px; margin-bottom: 20px; }
+  #chat { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+  .msg { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; white-space:pre-wrap; line-height:1.5; }
+  .user { align-self:flex-end; background:var(--accent); color:#fff; border-color:var(--accent); max-width:85%; }
+  .bot { max-width:100%; }
+  .src { margin-top:8px; font-size:12px; color:var(--sub); }
+  pre { background:var(--code); color:#E2E8F0; padding:10px 12px; border-radius:8px; overflow-x:auto; font-size:13px; }
+  textarea { width:100%; min-height:90px; padding:12px; border:1px solid var(--line); border-radius:12px; font:inherit; resize:vertical; }
+  button { margin-top:8px; background:var(--accent); color:#fff; border:0; padding:10px 18px; border-radius:10px; font-size:15px; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ZenPharma Course Assistant</h1>
+  <div class="sub">Ask a question about a lab or concept. You can paste the error message too.</div>
+  <div id="chat"></div>
+  <textarea id="q" placeholder="e.g. Module 4: my pod is in CrashLoopBackOff. Error: ..."></textarea>
+  <button id="send">Ask</button>
+</div>
+
+<script>
+  // Point this at your backend. Local: http://localhost:8000  |  Deployed: your Render/Railway URL
+  const API_URL = "http://localhost:8000";
+
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("q");
+  const btn = document.getElementById("send");
+
+  function add(text, cls, sources) {
+    const div = document.createElement("div");
+    div.className = "msg " + cls;
+    // Render ``` code blocks safely without innerHTML
+    text.split(/```/).forEach((part, i) => {
+      if (i % 2 === 1) {
+        const pre = document.createElement("pre");
+        pre.textContent = part.replace(/^\w*\n/, "");
+        div.appendChild(pre);
+      } else if (part) {
+        div.appendChild(document.createTextNode(part));
+      }
+    });
+    if (sources && sources.length) {
+      const s = document.createElement("div");
+      s.className = "src";
+      s.textContent = "Sources: " + sources.join(", ");
+      div.appendChild(s);
+    }
+    chat.appendChild(div);
+    div.scrollIntoView({ behavior: "smooth", block: "end" });
+    return div;
+  }
+
+  async function ask() {
+    const question = input.value.trim();
+    if (!question) return;
+    add(question, "user");
+    input.value = "";
+    btn.disabled = true;
+    const thinking = add("Looking through the course material...", "bot");
+    try {
+      const r = await fetch(API_URL + "/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      if (!r.ok) throw new Error("Server returned " + r.status);
+      const data = await r.json();
+      thinking.remove();
+      add(data.answer, "bot", data.sources);
+    } catch (e) {
+      thinking.remove();
+      add("Something went wrong. Please try again, or post your question on the Udemy Q&A.", "bot");
+      console.error(e);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  btn.addEventListener("click", ask);
+  input.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) ask(); });
+</script>
+</body>
+</html>

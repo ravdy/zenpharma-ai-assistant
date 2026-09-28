@@ -1,0 +1,21 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Generated (rebuild with scripts/chunk_docs.py + scripts/embed_docs.py)
+chroma_db/
+data/
+
+# Docs repo is cloned separately (see README Step 1)
+source-docs/
+
+# OS / editor
+.DS_Store
+.vscode/
