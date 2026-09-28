@@ -96,7 +96,9 @@ flowchart LR
 
 ```
 zenpharma-assistant/
-├── .env                    # secrets + config (never commit)
+├── .env                    # secrets + config (gitignored, never commit)
+├── .env.example            # template: cp .env.example .env
+├── .gitignore
 ├── README.md
 ├── scripts/
 │   ├── requirements.txt    # Python dependencies
@@ -143,7 +145,14 @@ This installs `anthropic`, `voyageai`, `chromadb`, `fastapi`, `uvicorn` and `pyt
 
 ### Step 4 — Configure environment variables
 
-Create `.env` in the project root:
+Copy the template and fill in your keys (`.env` is gitignored, so keys never
+reach GitHub):
+
+```bash
+cp .env.example .env
+```
+
+The minimum `.env` looks like:
 
 ```
 ANTHROPIC_API_KEY=your_claude_api_key
@@ -419,7 +428,5 @@ duplicate chunk IDs, workspace header, 405 on GET, `.env` not loaded).
 
 - Log unanswered/escalated questions to find doc gaps
 - Add a "flag to instructor" button in the UI
-- Add a `.gitignore` (`.env`, `venv/`, `chroma_db/`, `data/`, `__pycache__/`)
-  before pushing this project to GitHub
 - Consider migrating to Amazon Bedrock Knowledge Bases if traffic or
   reliability needs grow
